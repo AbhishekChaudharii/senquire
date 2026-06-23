@@ -44,13 +44,3 @@ def build_preprocessing_pipeline(document_store: ChromaDocumentStore) -> Pipelin
     preprocessing_pipeline.connect("local_embedder", "document_writer")
 
     return preprocessing_pipeline
-
-if __name__ == "__main__":
-    # Initialize store explicitly
-    document_store = ChromaDocumentStore(persist_path="./chroma_db", collection_name="my_documents")
-    pipeline = build_preprocessing_pipeline(document_store)
-    file_paths = glob("samples/*")
-    
-    # print(f"Ingesting {len(file_paths)} files...")
-    result = pipeline.run({"file_type_router": {"sources": file_paths}})
-    print("Ingestion Complete:", result)

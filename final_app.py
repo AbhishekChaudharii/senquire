@@ -11,7 +11,7 @@ st.title("📄 Document Q&A Chatbot")
 
 @st.cache_resource
 def initialize_system():
-    document_store = ChromaDocumentStore(persist_path="./chroma_db", collection_name="my_documents")
+    document_store = ChromaDocumentStore(collection_name="my_documents")
     ingest_pipeline = build_preprocessing_pipeline(document_store)
     query_pipeline = build_query_pipeline(document_store)
     return document_store, ingest_pipeline, query_pipeline

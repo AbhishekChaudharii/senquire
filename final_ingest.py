@@ -1,14 +1,13 @@
 from haystack.components.writers import DocumentWriter
-from haystack.components.converters import MarkdownToDocument, PyPDFToDocument, TextFileToDocument
+from haystack.components.converters import PyPDFToDocument, TextFileToDocument
 from haystack.components.converters.docx import DOCXToDocument
 from haystack.components.preprocessors import DocumentSplitter, DocumentCleaner
 from haystack.components.routers import FileTypeRouter
 # from haystack_integrations.components.embedders.ollama.document_embedder import OllamaDocumentEmbedder
 from haystack.components.embedders import SentenceTransformersDocumentEmbedder
 from haystack import Pipeline
-from haystack_integrations.components.retrievers.chroma import ChromaEmbeddingRetriever
 from haystack_integrations.document_stores.chroma import ChromaDocumentStore
-from glob import glob
+from haystack.document_stores.types import DuplicatePolicy
 
 def build_preprocessing_pipeline(document_store: ChromaDocumentStore) -> Pipeline:
     
@@ -20,7 +19,7 @@ def build_preprocessing_pipeline(document_store: ChromaDocumentStore) -> Pipelin
     document_cleaner = DocumentCleaner()
     document_splitter = DocumentSplitter(split_by="word", split_length=150, split_overlap=50)
     local_embedder = SentenceTransformersDocumentEmbedder(model="BAAI/bge-small-en-v1.5")
-    document_writer = DocumentWriter(document_store)
+    document_writer = DocumentWriter(document_store,policy=DuplicatePolicy.SKIP)
 
 
     preprocessing_pipeline = Pipeline()

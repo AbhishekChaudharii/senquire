@@ -5,7 +5,7 @@ from haystack_integrations.document_stores.chroma import ChromaDocumentStore
 from haystack_integrations.components.embedders.ollama import OllamaTextEmbedder
 from haystack_integrations.components.generators.ollama import OllamaChatGenerator
 from haystack.components.embedders import SentenceTransformersTextEmbedder
-import os
+
 
 # Prompt template
 template = """
@@ -45,4 +45,3 @@ def build_query_pipeline(document_store: ChromaDocumentStore) -> Pipeline:
     query_pipeline.connect("prompt_builder.prompt","generator.messages")
 
     return query_pipeline
-

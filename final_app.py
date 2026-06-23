@@ -53,40 +53,50 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 if prompt := st.chat_input("Ask a question about your documents..."):
-    
     st.chat_message("user").markdown(prompt)
     st.session_state.messages.append({"role": "user", "content": prompt})
 
     with st.chat_message("assistant"):
-        with st.spinner("Thinking..."):
-            try:
-                result = query_pipeline.run(
-                    {
-                        "query_embedder": {"text": prompt},
-                        "prompt_builder": {"query": prompt}
-                    },
-                    include_outputs_from={"retriever"}
-                )
-                
-                chat_message_obj = result["generator"]["replies"][0]
-                llm_answer = chat_message_obj.text
-                
-                retrieved_chunks = result.get("retriever", {}).get("documents", [])
-                source_files = set()
-                for doc in retrieved_chunks:
-                    file_path = doc.meta.get("file_path")
-                    if file_path:
-                        filename = os.path.basename(file_path)
-                        source_files.add(filename)
-                
-                response_text = f"{llm_answer}\n\n"
-                if source_files:
-                    response_text += f"**📌 Sources:** {', '.join(source_files)}"
-                else:
-                    response_text += "**📌 Sources:** No document chunks retrieved."
+        if document_store.count_documents() == 0:
+            fallback_msg = "I couldn't find this information because no documents have been uploaded yet. Please upload files in the sidebar."
+            st.markdown(fallback_msg)
+            st.session_state.messages.append({"role": "assistant", "content": fallback_msg})
+            
+        else:
+            with st.spinner("Thinking..."):
+                try:
                     
-                st.markdown(response_text)
-                st.session_state.messages.append({"role": "assistant", "content": response_text})
-                
-            except Exception as e:
-                st.error(f"An error occurred during generation: {e}")
+                    result = query_pipeline.run(
+                        {
+                            "query_embedder": {"text": prompt},
+                            "prompt_builder": {"query": prompt}
+                        },
+                        include_outputs_from={"retriever"}
+                    )
+                    
+                    # Extract Sources
+                    retrieved_chunks = result.get("retriever", {}).get("documents", [])
+                    
+                    if len(retrieved_chunks) == 0:
+                        fallback_msg = "I couldn't find this information in the uploaded documents."
+                        st.markdown(fallback_msg)
+                        st.session_state.messages.append({"role": "assistant", "content": fallback_msg})
+                    
+                    else:
+                        chat_message_obj = result["generator"]["replies"][0]
+                        llm_answer = chat_message_obj.text
+                        
+                        source_files = set()
+                        for doc in retrieved_chunks:
+                            file_path = doc.meta.get("file_path")
+                            if file_path:
+                                filename = os.path.basename(file_path)
+                                source_files.add(filename)
+                                                
+                        response_text = f"{llm_answer}\n\n**📌 Sources:** {', '.join(source_files)}"
+                                                    
+                        st.markdown(response_text)
+                        st.session_state.messages.append({"role": "assistant", "content": response_text})
+                        
+                except Exception as e:
+                    st.error(f"An error occurred during generation: {e}")

@@ -3,11 +3,11 @@ from haystack.components.converters import PyPDFToDocument, TextFileToDocument
 from haystack.components.converters.docx import DOCXToDocument
 from haystack.components.preprocessors import DocumentSplitter, DocumentCleaner
 from haystack.components.routers import FileTypeRouter
-# from haystack_integrations.components.embedders.ollama.document_embedder import OllamaDocumentEmbedder
-from haystack.components.embedders import SentenceTransformersDocumentEmbedder
+from haystack_integrations.components.embedders.huggingface_api import HuggingFaceAPIDocumentEmbedder
 from haystack import Pipeline
 from haystack_integrations.document_stores.chroma import ChromaDocumentStore
 from haystack.document_stores.types import DuplicatePolicy
+# from haystack.utils import Secret
 
 def build_preprocessing_pipeline(document_store: ChromaDocumentStore) -> Pipeline:
     
@@ -18,7 +18,9 @@ def build_preprocessing_pipeline(document_store: ChromaDocumentStore) -> Pipelin
     pdf_converter = PyPDFToDocument()
     document_cleaner = DocumentCleaner()
     document_splitter = DocumentSplitter(split_by="word", split_length=150, split_overlap=50)
-    local_embedder = SentenceTransformersDocumentEmbedder(model="BAAI/bge-small-en-v1.5")
+    text_embedder = HuggingFaceAPIDocumentEmbedder(
+    api_type="serverless_inference_api",
+    api_params={"model": "BAAI/bge-small-en-v1.5"})
     document_writer = DocumentWriter(document_store,policy=DuplicatePolicy.SKIP)
 
 
@@ -29,7 +31,7 @@ def build_preprocessing_pipeline(document_store: ChromaDocumentStore) -> Pipelin
     preprocessing_pipeline.add_component(instance=pdf_converter, name="pypdf_converter")
     preprocessing_pipeline.add_component(instance=document_cleaner, name="document_cleaner")
     preprocessing_pipeline.add_component(instance=document_splitter, name="document_splitter")
-    preprocessing_pipeline.add_component(instance=local_embedder, name="local_embedder")
+    preprocessing_pipeline.add_component(instance=text_embedder, name="text_embedder")
     preprocessing_pipeline.add_component(instance=document_writer, name="document_writer")
 
     preprocessing_pipeline.connect("file_type_router.text/plain", "text_file_converter.sources")
@@ -39,7 +41,7 @@ def build_preprocessing_pipeline(document_store: ChromaDocumentStore) -> Pipelin
     preprocessing_pipeline.connect("pypdf_converter", "document_cleaner")
     preprocessing_pipeline.connect("docx_converter", "document_cleaner")
     preprocessing_pipeline.connect("document_cleaner", "document_splitter")
-    preprocessing_pipeline.connect("document_splitter", "local_embedder")
-    preprocessing_pipeline.connect("local_embedder", "document_writer")
+    preprocessing_pipeline.connect("document_splitter", "text_embedder")
+    preprocessing_pipeline.connect("text_embedder", "document_writer")
 
     return preprocessing_pipeline

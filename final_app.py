@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+load_dotenv()
 import streamlit as st
 import os
 import tempfile
@@ -92,8 +94,11 @@ if prompt := st.chat_input("Ask a question about your documents..."):
                             if file_path:
                                 filename = os.path.basename(file_path)
                                 source_files.add(filename)
-                                                
-                        response_text = f"{llm_answer}\n\n**📌 Sources:** {', '.join(source_files)}"
+                        refusal_phrase="I couldn't find this information in the uploaded documents."
+                        if refusal_phrase in llm_answer.strip():
+                            response_text=refusal_phrase
+                        else:
+                            response_text = f"{llm_answer}\n\n**📌 Sources:** {', '.join(source_files)}"
                                                     
                         st.markdown(response_text)
                         st.session_state.messages.append({"role": "assistant", "content": response_text})

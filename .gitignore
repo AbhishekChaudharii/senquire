@@ -2,3 +2,4 @@ chroma_db/
 samples/
 .vscode/
 __pycache__/
+.env

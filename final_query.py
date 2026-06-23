@@ -2,9 +2,9 @@ from haystack import Pipeline
 from haystack.components.builders import PromptBuilder
 from haystack_integrations.components.retrievers.chroma import ChromaEmbeddingRetriever
 from haystack_integrations.document_stores.chroma import ChromaDocumentStore
-from haystack_integrations.components.embedders.ollama import OllamaTextEmbedder
-from haystack_integrations.components.generators.ollama import OllamaChatGenerator
-from haystack.components.embedders import SentenceTransformersTextEmbedder
+from haystack.components.generators.chat import OpenAIChatGenerator
+from haystack.components.embedders import HuggingFaceAPITextEmbedder
+from haystack.utils import Secret
 
 
 # Prompt template
@@ -27,9 +27,14 @@ Answer:
 """
 def build_query_pipeline(document_store: ChromaDocumentStore) -> Pipeline:
     # Query embedder
-    query_embedder = SentenceTransformersTextEmbedder(model="BAAI/bge-small-en-v1.5")
+    query_embedder = HuggingFaceAPITextEmbedder(api_type="serverless_inference_api",api_params={"model": "BAAI/bge-small-en-v1.5"})
     retriever = ChromaEmbeddingRetriever(document_store=document_store,top_k=5)
-    generator = OllamaChatGenerator(model="llama3", url="http://localhost:11434")
+    generator = OpenAIChatGenerator(
+    api_key=Secret.from_env_var("GROQ_API_KEY"),
+    api_base_url="https://api.groq.com/openai/v1",
+    model="llama-3.1-8b-instant",
+    generation_kwargs = {"max_tokens": 512}
+)
     prompt_builder = PromptBuilder(template=template, required_variables=["documents", "query"])
 
     # Pipeline

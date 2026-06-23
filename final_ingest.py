@@ -19,7 +19,6 @@ def build_preprocessing_pipeline(document_store: ChromaDocumentStore) -> Pipelin
     pdf_converter = PyPDFToDocument()
     document_cleaner = DocumentCleaner()
     document_splitter = DocumentSplitter(split_by="word", split_length=150, split_overlap=50)
-    # ollama_embedder = OllamaDocumentEmbedder(model="nomic-embed-text", url="http://localhost:11434")
     local_embedder = SentenceTransformersDocumentEmbedder(model="BAAI/bge-small-en-v1.5")
     document_writer = DocumentWriter(document_store)
 

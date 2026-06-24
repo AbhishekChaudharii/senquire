@@ -5,7 +5,7 @@ import os
 import tempfile
 from haystack_integrations.document_stores.chroma import ChromaDocumentStore
 from final_ingest import build_preprocessing_pipeline
-from final_query import build_query_pipeline
+from final_query import build_query_pipeline,build_rewriter_pipeline
 
 
 st.set_page_config(page_title="RAG Chat", page_icon="📄")
@@ -16,9 +16,10 @@ def initialize_system():
     document_store = ChromaDocumentStore(collection_name="my_documents")
     ingest_pipeline = build_preprocessing_pipeline(document_store)
     query_pipeline = build_query_pipeline(document_store)
-    return document_store, ingest_pipeline, query_pipeline
+    rewriter_pipeline = build_rewriter_pipeline()
+    return document_store, ingest_pipeline, query_pipeline, rewriter_pipeline
 
-document_store, ingest_pipeline, query_pipeline = initialize_system()
+document_store, ingest_pipeline, query_pipeline, rewriter_pipeline = initialize_system()
 
 with st.sidebar:
     st.header("📂 Upload Documents")
@@ -67,16 +68,39 @@ if prompt := st.chat_input("Ask a question about your documents..."):
         else:
             with st.spinner("Thinking..."):
                 try:
+                    # 1. Format last few chat messages to give the rewriter context
+                    history_string = ""
+                    # Will grab up to the last 4 messages (excluding current prompt)
+                    recent_history = st.session_state.messages[-5:-1]
+                    if recent_history:
+                        for msg in recent_history:
+                            history_string += f"{msg['role'].capitalize()}: {msg['content']}\n"
+                    else:
+                        history_string = "No previous history."
+
+                    # 2. Running rewriter piepline
+                    rewrite_result = rewriter_pipeline.run({
+                        "prompt_builder": {
+                            "history": history_string,
+                            "query": prompt
+                        }
+                    })
                     
+                    # Extract the standalone string out of the ChatMessage object wrapper
+                    standalone_query = rewrite_result["generator"]["replies"][0].text.strip()
+                    # TODO: Debug print to terminal to trace how llm optimizes the query
+                    # print(f"\n[DEBUG CONTEXT] Original: {prompt}")
+                    # print(f"[DEBUG CONTEXT] Rewritten: {standalone_query}\n")
+
                     result = query_pipeline.run(
                         {
-                            "query_embedder": {"text": prompt},
-                            "prompt_builder": {"query": prompt}
+                            "query_embedder": {"text": standalone_query},
+                            "prompt_builder": {"query": standalone_query}
                         },
                         include_outputs_from={"retriever"}
                     )
                     
-                    # Extract Sources
+                    #* Extracting sources
                     retrieved_chunks = result.get("retriever", {}).get("documents", [])
                     
                     if len(retrieved_chunks) == 0:

@@ -33,7 +33,7 @@ def build_query_pipeline(document_store: ChromaDocumentStore) -> Pipeline:
     api_key=Secret.from_env_var("GROQ_API_KEY"),
     api_base_url="https://api.groq.com/openai/v1",
     model="llama-3.1-8b-instant",
-    generation_kwargs = {"max_tokens": 512}
+    # generation_kwargs = {"max_tokens": 512}
 )
     prompt_builder = PromptBuilder(template=template, required_variables=["documents", "query"])
 
@@ -75,6 +75,11 @@ def build_rewriter_pipeline() -> Pipeline:
     User: What is xgboost?
     Standalone Question: What is xgboost?
 
+    Example 3 (When there is previous history but the current question has no relation to it):
+    History: What is xgboost?
+    User: who is elon musk?
+    Standalone Question: who is elon musk?
+
     If the new question is already standalone and does not rely on history, output it exactly as it is.
     Keep in mind that your rewritten query is VERY VERY IMPORTANT for this rag project to work.
 
@@ -91,7 +96,7 @@ def build_rewriter_pipeline() -> Pipeline:
     api_key=Secret.from_env_var("GROQ_API_KEY"),
     api_base_url="https://api.groq.com/openai/v1",
     model="llama-3.1-8b-instant",
-    generation_kwargs = {"max_tokens": 512}
+    generation_kwargs = {"max_tokens": 256}
 )
 
     rewriter_pipeline = Pipeline()

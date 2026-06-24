@@ -8,7 +8,7 @@ from final_ingest import build_preprocessing_pipeline
 from final_query import build_query_pipeline,build_rewriter_pipeline
 
 
-st.set_page_config(page_title="RAG Chat", page_icon="📄")
+st.set_page_config(page_title="RAG Chatbot", page_icon="📄")
 st.title("📄 Document Q&A Chatbot")
 
 @st.cache_resource

@@ -17,7 +17,7 @@ def build_preprocessing_pipeline(document_store: ChromaDocumentStore) -> Pipelin
     docx_converter = DOCXToDocument()
     pdf_converter = PyPDFToDocument()
     document_cleaner = DocumentCleaner()
-    document_splitter = DocumentSplitter(split_by="word", split_length=150, split_overlap=50)
+    document_splitter = DocumentSplitter(split_by="word", split_length=300, split_overlap=50)
     text_embedder = HuggingFaceAPIDocumentEmbedder(
     api_type="serverless_inference_api",
     api_params={"model": "BAAI/bge-small-en-v1.5"})

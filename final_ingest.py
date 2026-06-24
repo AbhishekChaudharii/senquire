@@ -8,6 +8,8 @@ from haystack import Pipeline
 from haystack_integrations.document_stores.chroma import ChromaDocumentStore
 from haystack.document_stores.types import DuplicatePolicy
 # from haystack.utils import Secret
+import mimetypes
+mimetypes.add_type('application/vnd.openxmlformats-officedocument.wordprocessingml.document', '.docx')
 
 def build_preprocessing_pipeline(document_store: ChromaDocumentStore) -> Pipeline:
     

@@ -6,6 +6,8 @@ import tempfile
 from haystack_integrations.document_stores.chroma import ChromaDocumentStore
 from final_ingest import build_preprocessing_pipeline
 from final_query import build_query_pipeline,build_rewriter_pipeline
+import mimetypes
+mimetypes.add_type('application/vnd.openxmlformats-officedocument.wordprocessingml.document', '.docx')
 
 
 st.set_page_config(page_title="RAG Chatbot", page_icon="📄")

@@ -6,6 +6,7 @@ import tempfile
 from haystack_integrations.document_stores.chroma import ChromaDocumentStore
 from final_ingest import build_preprocessing_pipeline
 from final_query import build_query_pipeline,build_rewriter_pipeline
+import uuid
 import mimetypes
 mimetypes.add_type('application/vnd.openxmlformats-officedocument.wordprocessingml.document', '.docx')
 
@@ -14,7 +15,8 @@ st.set_page_config(page_title="RAG Chatbot", page_icon="📄")
 st.title("📄 Document Q&A Chatbot")
 
 if "document_store" not in st.session_state:
-    st.session_state.document_store = ChromaDocumentStore(collection_name="my_documents")
+    session_id = str(uuid.uuid4())
+    st.session_state.document_store = ChromaDocumentStore(collection_name=session_id)
     st.session_state.ingest_pipeline = build_preprocessing_pipeline(st.session_state.document_store)
     st.session_state.query_pipeline = build_query_pipeline(st.session_state.document_store)
     st.session_state.rewriter_pipeline = build_rewriter_pipeline()

@@ -13,15 +13,11 @@ mimetypes.add_type('application/vnd.openxmlformats-officedocument.wordprocessing
 st.set_page_config(page_title="RAG Chatbot", page_icon="📄")
 st.title("📄 Document Q&A Chatbot")
 
-@st.cache_resource
-def initialize_system():
-    document_store = ChromaDocumentStore(collection_name="my_documents")
-    ingest_pipeline = build_preprocessing_pipeline(document_store)
-    query_pipeline = build_query_pipeline(document_store)
-    rewriter_pipeline = build_rewriter_pipeline()
-    return document_store, ingest_pipeline, query_pipeline, rewriter_pipeline
-
-document_store, ingest_pipeline, query_pipeline, rewriter_pipeline = initialize_system()
+if "document_store" not in st.session_state:
+    st.session_state.document_store = ChromaDocumentStore(collection_name="my_documents")
+    st.session_state.ingest_pipeline = build_preprocessing_pipeline(st.session_state.document_store)
+    st.session_state.query_pipeline = build_query_pipeline(st.session_state.document_store)
+    st.session_state.rewriter_pipeline = build_rewriter_pipeline()
 
 with st.sidebar:
     st.header("📂 Upload Documents")
@@ -43,10 +39,10 @@ with st.sidebar:
                         file_paths.append(temp_file_path)
                     
                 
-                    ingest_pipeline.run({"file_type_router": {"sources": file_paths}})
+                    st.session_state.ingest_pipeline.run({"file_type_router": {"sources": file_paths}})
             
             st.success(f"Successfully processed {len(uploaded_files)} file(s)!")
-            st.info(f"Total documents in database: {document_store.count_documents()}")
+            st.info(f"Total documents in database: {st.session_state.document_store.count_documents()}")
         else:
             st.warning("Please upload files before ingesting.")
 
@@ -62,7 +58,7 @@ if prompt := st.chat_input("Ask a question about your documents..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
 
     with st.chat_message("assistant"):
-        if document_store.count_documents() == 0:
+        if st.session_state.document_store.count_documents() == 0:
             fallback_msg = "I couldn't find this information because no documents have been uploaded yet. Please upload files in the sidebar."
             st.markdown(fallback_msg)
             st.session_state.messages.append({"role": "assistant", "content": fallback_msg})
@@ -81,7 +77,7 @@ if prompt := st.chat_input("Ask a question about your documents..."):
                         history_string = "No previous history."
 
                     # 2. Running rewriter piepline
-                    rewrite_result = rewriter_pipeline.run({
+                    rewrite_result = st.session_state.rewriter_pipeline.run({
                         "prompt_builder": {
                             "history": history_string,
                             "query": prompt
@@ -94,7 +90,7 @@ if prompt := st.chat_input("Ask a question about your documents..."):
                     # print(f"\n[DEBUG CONTEXT] Original: {prompt}")
                     # print(f"[DEBUG CONTEXT] Rewritten: {standalone_query}\n")
 
-                    result = query_pipeline.run(
+                    result = st.session_state.query_pipeline.run(
                         {
                             "query_embedder": {"text": standalone_query},
                             "prompt_builder": {"query": standalone_query}
